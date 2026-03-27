@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.local
+.superpowers/
+.next/
+dist/
+*.token
+credentials.*
+.mcp.json
+shrimp_data/
+.playwright-mcp/
+__pycache__/
+*.pyc
+.venv/
