@@ -1,0 +1,13 @@
+{
+  "name": "arc-captcha",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter demo dev",
+    "build": "pnpm --filter @arc-captcha/react build && pnpm --filter demo build",
+    "test": "pnpm --filter @arc-captcha/react test",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
