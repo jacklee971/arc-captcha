@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 const ENVIRONMENTS = [
-  { id: "1s20", name: "Environment 1s20", description: "Multi-mechanic puzzle with 3-life system" },
-  { id: "ft09", name: "Environment ft09", description: "Spatial reasoning challenge" },
-  { id: "vc33", name: "Environment vc33", description: "Pattern discovery environment" },
+  { id: "ls20-9607627b", name: "LS20", description: "Multi-mechanic puzzle with keyboard controls" },
+  { id: "ft09-0d8bbf25", name: "FT09", description: "Spatial reasoning challenge" },
+  { id: "vc33-9851e02b", name: "VC33", description: "Pattern discovery with click interactions" },
 ];
 
 export default function Home() {
