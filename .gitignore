@@ -12,6 +12,7 @@ shrimp_data/
 __pycache__/
 *.pyc
 .venv/
+analysis/data/
 .DS_Store
 environment_files/
 *.tsbuildinfo
