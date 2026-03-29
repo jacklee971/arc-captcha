@@ -37,6 +37,7 @@ function validatePayload(body: unknown): SessionPayload | null {
   if (typeof b.isHuman !== "boolean") return null;
   if (typeof b.confidence !== "number") return null;
   if (!Array.isArray(b.actionLog)) return null;
+  if (b.actionLog.length > 500) return null;
 
   return b as unknown as SessionPayload;
 }
@@ -134,9 +135,9 @@ export async function POST(request: NextRequest) {
       data: { sessionId, stored: true },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Session storage failed:", err);
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Internal server error" },
       { status: 500 }
     );
   }

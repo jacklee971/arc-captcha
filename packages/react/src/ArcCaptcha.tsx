@@ -146,18 +146,23 @@ export function ArcCaptcha({
     [frameData, actionCount, maxActions, apiEndpoint, environmentId, onVerify, onAction]
   );
 
-  // Keyboard controls
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Focus the container on mount so keyboard events are captured
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
+    containerRef.current?.focus();
+  }, [loading]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
       const action = keyToAction(e.key);
       if (action !== null) {
         e.preventDefault();
         performAction(action);
       }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [performAction]);
+    },
+    [performAction]
+  );
 
   const handleCellClick = useCallback(
     (x: number, y: number) => {
@@ -204,11 +209,16 @@ export function ArcCaptcha({
 
   return (
     <div
+      ref={containerRef}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      onClick={() => containerRef.current?.focus()}
       style={{
         background: bgColor,
         borderRadius: 8,
         padding: 8,
         display: "inline-block",
+        outline: "none",
       }}
     >
       <GridRenderer frame={currentFrame} size={size} onCellClick={handleCellClick} />

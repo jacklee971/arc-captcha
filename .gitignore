@@ -15,4 +15,5 @@ __pycache__/
 analysis/data/
 .DS_Store
 environment_files/
+docs/superpowers/
 *.tsbuildinfo

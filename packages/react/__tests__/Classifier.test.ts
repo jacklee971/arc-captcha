@@ -30,10 +30,10 @@ function makeBotLogs(count: number): ActionLog[] {
   return Array.from({ length: count }, (_, i) =>
     makeLog({
       timestamp: 1000 + i * 100,
-      timeSinceLastAction: i === 0 ? 0 : 100, // 정확히 100ms 간격
+      timeSinceLastAction: i === 0 ? 0 : 100, // exactly 100ms intervals
       actionType: "key",
       actionId: GameAction.ACTION1,
-      frameHash: "0-0-0-0-0", // 항상 같은 프레임
+      frameHash: "0-0-0-0-0", // always the same frame
     })
   );
 }

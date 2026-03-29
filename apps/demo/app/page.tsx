@@ -36,7 +36,7 @@ export default function Home() {
           Open source research project for{" "}
           <a href="https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3" style={{ color: "#58a6ff" }}>ARC Prize 2026</a>
           {" | "}
-          <a href="https://github.com" style={{ color: "#58a6ff" }}>GitHub</a>
+          <a href="https://github.com/jacklee971/arc-captcha" style={{ color: "#58a6ff" }}>GitHub</a>
         </p>
       </footer>
     </main>

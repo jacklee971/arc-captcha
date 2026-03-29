@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ArcCaptcha } from "../src/ArcCaptcha";
 
-// crypto.randomUUID가 jsdom 환경에서 지원되지 않을 수 있으므로 모킹
+// Mock crypto.randomUUID since it may not be available in jsdom environment
 beforeAll(() => {
   if (!globalThis.crypto) {
     (globalThis as unknown as Record<string, unknown>).crypto = {};
@@ -14,7 +14,7 @@ beforeAll(() => {
   }
 });
 
-// fetch 모킹: 초기 로딩 상태를 보여주기 위해 resolve 하지 않는 Promise 반환
+// Mock fetch: return a never-resolving Promise to keep the component in loading state
 vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
 
 describe("ArcCaptcha", () => {

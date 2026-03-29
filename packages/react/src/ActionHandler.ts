@@ -1,6 +1,6 @@
 import { GameAction } from "./types";
 
-/** 키보드 키를 GameAction으로 매핑하는 테이블 */
+/** Mapping table from keyboard keys to GameAction */
 const KEY_MAP: Record<string, GameAction> = {
   ArrowUp: GameAction.ACTION1,
   w: GameAction.ACTION1,
@@ -16,12 +16,12 @@ const KEY_MAP: Record<string, GameAction> = {
   Backspace: GameAction.ACTION7,
 };
 
-/** 키보드 키를 해당 GameAction으로 변환하며, 매핑되지 않은 키는 null 반환 */
+/** Convert a keyboard key to the corresponding GameAction, returns null for unmapped keys */
 export function keyToAction(key: string): GameAction | null {
   return KEY_MAP[key] ?? null;
 }
 
-/** 단순 액션 여부 반환 (ACTION6은 좌표가 필요한 복잡한 액션) */
+/** Returns whether the action is simple (ACTION6 is a complex action requiring coordinates) */
 export function isSimpleAction(action: GameAction): boolean {
   return action !== GameAction.ACTION6;
 }
@@ -33,7 +33,7 @@ interface ActionPayload {
   y?: number;
 }
 
-/** API 요청에 사용할 액션 페이로드 생성 (ACTION6은 좌표 포함) */
+/** Create an action payload for API requests (ACTION6 includes coordinates) */
 export function createActionPayload(
   action: GameAction,
   gameId: string,
