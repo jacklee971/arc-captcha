@@ -4,6 +4,7 @@ import { GameAction } from "./types";
 import { GridRenderer } from "./GridRenderer";
 import { keyToAction, createActionPayload } from "./ActionHandler";
 import { BehaviorLogger } from "./BehaviorLogger";
+import { classify } from "./Classifier";
 
 /** Sample corner/center pixels from a frame to generate a quick hash */
 function hashFrame(frame: Frame): string {
@@ -128,9 +129,10 @@ export function ArcCaptcha({
           newCount >= maxActions
         ) {
           const summary = loggerRef.current.getSummary();
+          const classification = classify(summary.logs);
           onVerify({
-            isHuman: false,
-            confidence: 0,
+            isHuman: classification.isHuman,
+            confidence: classification.confidence,
             sessionId: summary.sessionId,
             actionCount: summary.totalActions,
             levelReached: data.levels_completed,
