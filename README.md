@@ -14,7 +14,7 @@ ARC-CAPTCHA wraps ARC-AGI-3 environments into an embeddable widget that:
 ### 1. Install
 
 ```bash
-npm install @arc-captcha/react
+npm install arc-captcha-react
 ```
 
 ### 2. Set Up the API Proxy
@@ -82,7 +82,7 @@ Deploy to Railway, Fly.io, or any container platform. See `server/` directory.
 ### 3. Add the Widget
 
 ```tsx
-import { ArcCaptcha } from "@arc-captcha/react";
+import { ArcCaptcha } from "arc-captcha-react";
 
 function LoginForm() {
   const handleVerify = (result) => {
@@ -179,7 +179,7 @@ pnpm dev
 ```
 Your App                          ARC-CAPTCHA
 ┌─────────────┐                  ┌──────────────────────┐
-│ Login Form  │                  │ @arc-captcha/react   │
+│ Login Form  │                  │ arc-captcha-react   │
 │             │                  │                      │
 │ ┌─────────┐ │    actions       │ ┌──────────────────┐ │
 │ │ArcCaptch│─┼──────────────────┼▸│  GridRenderer     │ │
@@ -202,7 +202,7 @@ Your API Proxy                   │ │  human/bot score  │ │
 
 ## Project Structure
 
-- `packages/react/` — `@arc-captcha/react` embeddable widget (React + TypeScript)
+- `packages/react/` — `arc-captcha-react` embeddable widget (React + TypeScript)
 - `apps/demo/` — Next.js demo site
 - `server/` — Dockerized Python game server for deployment
 - `analysis/` — Python notebooks for behavioral analysis
