@@ -5,15 +5,47 @@ import { useCallback, useState } from "react";
 import { ArcCaptcha } from "@arc-captcha/react";
 import type { VerifyResult, ActionLog } from "@arc-captcha/react";
 
+async function saveSession(
+  environmentId: string,
+  result: VerifyResult
+): Promise<void> {
+  try {
+    const response = await fetch("/api/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: result.sessionId,
+        environmentId,
+        actionCount: result.actionCount,
+        levelReached: result.levelReached,
+        isHuman: result.isHuman,
+        confidence: result.confidence,
+        actionLog: result.actionLog,
+        source: "web",
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json();
+      console.error("Failed to save session:", body.error);
+    }
+  } catch (err) {
+    console.error("Failed to save session:", err);
+  }
+}
+
 export default function PlayPage() {
   const { envId } = useParams<{ envId: string }>();
   const [result, setResult] = useState<VerifyResult | null>(null);
   const [lastAction, setLastAction] = useState<ActionLog | null>(null);
 
-  const handleVerify = useCallback((r: VerifyResult) => {
-    setResult(r);
-    console.log("Session complete:", r);
-  }, []);
+  const handleVerify = useCallback(
+    (r: VerifyResult) => {
+      setResult(r);
+      saveSession(envId, r);
+    },
+    [envId]
+  );
 
   const handleAction = useCallback((a: ActionLog) => {
     setLastAction(a);
@@ -35,16 +67,42 @@ export default function PlayPage() {
         size={512}
       />
       {lastAction && (
-        <div style={{ marginTop: 16, background: "#161b22", borderRadius: 8, padding: 12, fontSize: 12, fontFamily: "monospace" }}>
+        <div
+          style={{
+            marginTop: 16,
+            background: "#161b22",
+            borderRadius: 8,
+            padding: 12,
+            fontSize: 12,
+            fontFamily: "monospace",
+          }}
+        >
           <div style={{ color: "#8b949e", marginBottom: 4 }}>Last action:</div>
           <div style={{ color: "#c9d1d9" }}>
-            {lastAction.actionType} | +{lastAction.timeSinceLastAction}ms | frame: {lastAction.frameHash}
+            {lastAction.actionType} | +{lastAction.timeSinceLastAction}ms |
+            frame: {lastAction.frameHash}
           </div>
         </div>
       )}
       {result && (
-        <div style={{ marginTop: 16, background: "#1a2e1a", border: "1px solid #3fb95044", borderRadius: 8, padding: 16 }}>
-          <h3 style={{ margin: "0 0 8px", color: "#3fb950" }}>Session Complete</h3>
+        <div
+          style={{
+            marginTop: 16,
+            background: result.isHuman ? "#1a2e1a" : "#2e1a1a",
+            border: `1px solid ${result.isHuman ? "#3fb95044" : "#f8514944"}`,
+            borderRadius: 8,
+            padding: 16,
+          }}
+        >
+          <h3
+            style={{
+              margin: "0 0 8px",
+              color: result.isHuman ? "#3fb950" : "#f85149",
+            }}
+          >
+            Session Complete — {result.isHuman ? "Human" : "Bot"} (
+            {(result.confidence * 100).toFixed(0)}% confidence)
+          </h3>
           <div style={{ fontSize: 14 }}>
             <div>Actions: {result.actionCount}</div>
             <div>Level reached: {result.levelReached}</div>
