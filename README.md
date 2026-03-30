@@ -6,8 +6,16 @@ AI systems score below 1% on ARC-AGI-3. Humans solve 100%. This gap makes ARC-AG
 
 ARC-CAPTCHA wraps ARC-AGI-3 environments into an embeddable widget that:
 1. **Detects bots** by analyzing behavioral patterns (action timing, exploration diversity, strategy)
-2. **Collects data** — every action is logged with timestamps and frame state
-3. **Improves AI** — collected behavioral data feeds back into ARC-AGI-3 solver training
+2. **Collects strategy traces** — not answers, but *how* users play: timing, exploration sequences, undo patterns, strategy shifts
+3. **Studies rule induction** — the collected behavioral data helps research how humans discover rules in novel environments
+
+## What We Collect (and What We Don't)
+
+This project does **not** collect puzzle solutions or train on solved environments. ARC-AGI-3 relies on novelty — memorizing answers would defeat the benchmark.
+
+What we collect are **behavioral strategy traces**: the timing between actions, which areas users explore first, how they change strategies after failure, undo patterns, and exploration diversity. This data reveals *how* humans perform rule induction in real time, not *what* the correct answer is.
+
+This distinction matters. The classifier determines human vs. bot based on play behavior, not correctness. A human who fails to solve a puzzle still generates valuable strategy data.
 
 ## Integrate into Your App
 
@@ -41,17 +49,26 @@ Then create a proxy route in your backend (Next.js example):
 import { NextRequest, NextResponse } from "next/server";
 
 const ARC_API = process.env.ARC_API_URL ?? "http://127.0.0.1:8001/api";
-let cardId: string | null = null;
 
-async function getCardId(): Promise<string> {
-  if (cardId) return cardId;
-  const res = await fetch(`${ARC_API}/scorecard/open`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: "{}",
-  });
-  cardId = (await res.json()).card_id;
-  return cardId;
+let cardIdPromise: Promise<string> | null = null;
+
+function getCardId(): Promise<string> {
+  if (!cardIdPromise) {
+    cardIdPromise = (async () => {
+      const res = await fetch(`${ARC_API}/scorecard/open`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = (await res.json()) as { card_id: string };
+      if (!data.card_id) throw new Error("Missing card_id");
+      return data.card_id;
+    })().catch((err) => {
+      cardIdPromise = null;
+      throw err;
+    });
+  }
+  return cardIdPromise;
 }
 
 export async function POST(
@@ -83,18 +100,19 @@ Deploy to Railway, Fly.io, or any container platform. See `server/` directory.
 
 ```tsx
 import { ArcCaptcha } from "arc-captcha-react";
+import type { VerifyResult } from "arc-captcha-react";
 
 function LoginForm() {
-  const handleVerify = (result) => {
-    console.log(result.isHuman);     // true/false
-    console.log(result.confidence);   // 0-1
-    console.log(result.actionCount);  // number of actions taken
-    console.log(result.actionLog);    // full behavioral trace
-
-    // Send to your server for verification
+  const handleVerify = (result: VerifyResult) => {
+    // Send result to your server for verification
     fetch("/api/verify", {
       method: "POST",
-      body: JSON.stringify({ sessionId: result.sessionId }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: result.sessionId,
+        isHuman: result.isHuman,
+        confidence: result.confidence,
+      }),
     });
   };
 
@@ -105,7 +123,7 @@ function LoginForm() {
 
       <ArcCaptcha
         apiEndpoint="/api/arc"
-        environmentId="sc25-f9b21a2f"
+        environmentId="ls20-9607627b"
         onVerify={handleVerify}
         theme="dark"
         size={400}
@@ -122,7 +140,7 @@ function LoginForm() {
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `apiEndpoint` | `string` | required | URL to your API proxy |
-| `environmentId` | `string` | required | ARC-AGI-3 game ID (e.g. `sc25-f9b21a2f`) |
+| `environmentId` | `string` | required | ARC-AGI-3 game ID |
 | `onVerify` | `(result: VerifyResult) => void` | required | Called when session completes |
 | `onAction` | `(action: ActionLog) => void` | — | Called on each user action |
 | `maxActions` | `number` | `200` | Max actions before cutoff |
@@ -136,22 +154,16 @@ Get the list from the API:
 curl http://localhost:8001/api/games
 ```
 
-Popular ones for CAPTCHA use (short, interactive):
-- `sc25-f9b21a2f` — keyboard + click, 6 levels
-- `r11l-aa269680` — click only, 6 levels
-- `ft09-0d8bbf25` — 6 levels
-- `cd82-fb555c5d` — keyboard + click, 6 levels
-
 ### VerifyResult Object
 
 ```ts
 {
-  isHuman: boolean;      // classifier result
-  confidence: number;    // 0-1 confidence score
-  sessionId: string;     // unique session ID
-  actionCount: number;   // total actions taken
-  levelReached: number;  // highest level completed
-  actionLog: ActionLog[]; // full behavioral trace
+  isHuman: boolean;       // classifier result
+  confidence: number;     // 0-1 confidence score
+  sessionId: string;      // unique session ID
+  actionCount: number;    // total actions taken
+  levelReached: number;   // highest level completed
+  actionLog: ActionLog[]; // behavioral strategy traces (not solutions)
 }
 ```
 
@@ -179,19 +191,19 @@ pnpm dev
 ```
 Your App                          ARC-CAPTCHA
 ┌─────────────┐                  ┌──────────────────────┐
-│ Login Form  │                  │ arc-captcha-react   │
-│             │                  │                      │
-│ ┌─────────┐ │    actions       │ ┌──────────────────┐ │
-│ │ArcCaptch│─┼──────────────────┼▸│  GridRenderer     │ │
-│ │  Widget  │ │                  │ │  64x64 canvas     │ │
-│ └─────────┘ │    VerifyResult  │ ├──────────────────┤ │
-│             │◂─────────────────┼─│  BehaviorLogger   │ │
-└─────────────┘                  │ ├──────────────────┤ │
-                                 │ │  Classifier       │ │
-Your API Proxy                   │ │  human/bot score  │ │
-┌─────────────┐                  │ └──────────────────┘ │
-│/api/arc/*   │    HTTP          └──────────────────────┘
-│             │◂────────────┐
+│ Login Form  │                  │ arc-captcha-react     │
+│             │                  │                       │
+│ ┌─────────┐ │    actions       │ ┌───────────────────┐ │
+│ │ArcCaptch│─┼──────────────────┼▸│  GridRenderer      │ │
+│ │  Widget  │ │                  │ │  64x64 canvas      │ │
+│ └─────────┘ │    VerifyResult  │ ├───────────────────┤ │
+│             │◂─────────────────┼─│  BehaviorLogger    │ │
+└─────────────┘                  │ │  (strategy traces) │ │
+                                 │ ├───────────────────┤ │
+Your API Proxy                   │ │  Classifier        │ │
+┌─────────────┐                  │ │  human/bot score   │ │
+│/api/arc/*   │    HTTP          │ └───────────────────┘ │
+│             │◂────────────┐    └──────────────────────┘
 │ scorecard   │             │
 │ management  │    ┌────────┴───────┐
 └─────────────┘    │ ARC-AGI-3      │
@@ -210,7 +222,7 @@ Your API Proxy                   │ │  human/bot score  │ │
 
 ## How the Classifier Works
 
-The rule-based classifier analyzes 5 behavioral features:
+The rule-based classifier analyzes 5 behavioral features from strategy traces:
 
 | Feature | Human Signal | Bot Signal |
 |---------|-------------|------------|
@@ -220,11 +232,13 @@ The rule-based classifier analyzes 5 behavioral features:
 | Time to first action | Long (observes first) | Short (acts immediately) |
 | Action entropy | High (varied actions) | Low (repetitive actions) |
 
+The classifier determines human vs. bot based on **how someone plays**, not whether they solved the puzzle correctly. A human who fails still looks human. A bot that succeeds still looks like a bot.
+
 ## Roadmap
 
 - [x] Phase 1: Core SDK + Demo (widget, logger, demo site)
 - [x] Phase 2: Classifier + Data Pipeline (Supabase, human/bot detection)
-- [ ] Phase 3: Solver + Competition (Kaggle ARC Prize 2026 Milestone 1)
+- [ ] Phase 3: Solver + Competition (Kaggle ARC Prize 2026)
 
 ## Related Work
 
